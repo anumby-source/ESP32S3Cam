@@ -1,0 +1,166 @@
+camera.init(id, paramètres...)
+id : toujours 0 (une seule caméra)
+
+Ensuite, on configure :
+
+les broches (GPIO)
+
+le format et la résolution
+
+les horloges
+
+la mémoire
+
+les lignes de contrôle
+
+1) Format d’image
+format
+format=camera.JPEG
+Options :
+
+camera.JPEG → recommandé (rapide, faible RAM)
+
+camera.RGB565 → image brute (très gourmand)
+
+camera.GRAYSCALE
+
+Conseil S3 : toujours JPEG
+
+2) Résolution initiale
+framesize
+framesize=camera.FRAME_VGA
+Exemples :
+
+Constante	Résolution
+FRAME_QQVGA	160×120
+FRAME_QVGA	320×240
+FRAME_VGA	640×480
+FRAME_SVGA	800×600
+FRAME_UXGA	1600×1200
+⚠️ Plus c’est grand → plus de PSRAM.
+
+3) Horloge caméra
+xclk
+xclk=15
+GPIO qui envoie l’horloge au capteur.
+
+xclk_freq
+xclk_freq=camera.XCLK_10MHz
+Valeurs :
+
+XCLK_10MHz → stable (recommandé S3)
+
+XCLK_20MHz → plus rapide mais parfois instable
+
+4) Bus de données (les pixels)
+d0=11, d1=9, d2=8, d3=10,
+d4=12, d5=18, d6=17, d7=16
+Ces 8 lignes transportent les données image (bus parallèle 8 bits).
+
+Si une seule est fausse → crash ou image corrompue.
+
+5) Signaux de synchronisation
+pclk
+pclk=13
+Pixel Clock — cadence chaque pixel.
+
+vsync
+vsync=6
+Début/fin d’image.
+
+href
+href=7
+Début/fin de ligne.
+
+6) Communication de contrôle (I2C)
+Le capteur est configuré via I2C :
+
+siod=4   # SDA
+sioc=5   # SCL
+Si ces pins sont incorrectes :
+→ Guru Meditation / caméra non détectée.
+
+7) Contrôle d’alimentation
+pwdn
+pwdn=-1
+Power-down du capteur
+
+-1 = non utilisé
+
+reset
+reset=-1
+Broche reset (souvent non câblée)
+
+8) Mémoire image
+fb_location
+fb_location=camera.PSRAM
+Options :
+
+Valeur	Signification
+camera.PSRAM	Recommandé
+camera.DRAM	RAM interne (très limité)
+Sans PSRAM → VGA impossible.
+
+9) Paramètres optionnels utiles
+quality
+camera.quality(10)
+JPEG compression :
+
+Valeur	Effet
+10	haute qualité
+15	bon compromis
+30	petite image
+flip / mirror
+camera.flip(1)
+camera.mirror(1)
+Selon orientation du module.
+
+10) Exemple commenté
+camera.init(
+    0,                        # caméra ID
+    format=camera.JPEG,       # format image
+    framesize=camera.FRAME_VGA,
+    
+    # Bus données
+    d0=11, d1=9, d2=8, d3=10,
+    d4=12, d5=18, d6=17, d7=16,
+
+    # Synchronisation
+    pclk=13,
+    vsync=6,
+    href=7,
+
+    # Horloge
+    xclk=15,
+    xclk_freq=camera.XCLK_10MHz,
+
+    # I2C capteur
+    siod=4,
+    sioc=5,
+
+    # Contrôle
+    reset=-1,
+    pwdn=-1,
+
+    # Mémoire
+    fb_location=camera.PSRAM
+)
+11) Causes classiques d’erreurs
+Symptôme	Cause
+Guru Meditation	pin faux
+camera.init échoue	I2C incorrect
+image noire	xclk / vsync incorrect
+MemoryError	résolution trop grande
+reboot	pas de PSRAM
+12) Bon réglage pour ESP32-S3 (recommandé)
+XCLK_10MHz
+
+JPEG
+
+PSRAM
+
+FRAME_VGA ou QVGA
+
+quality=12
+
+Si tu veux aller plus loin, je peux te faire un schéma clair du pipeline caméra ESP32 (OV2640 → PSRAM → JPEG → WiFi) ou te donner une table de réglages qualité/performance pour ton serveur web.
