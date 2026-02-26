@@ -63,7 +63,7 @@ html = """\
 <label>Label :</label>
 <input id="label" value="default"><br>
 <button onclick="capture()">Capture</button><br>
-<button onclick="capture50()">Capture50</button><br>
+<button onclick="serie()">Serie</button><br>
 <span id="counter">0</span> images<br>
 
 <br><br>
@@ -84,6 +84,20 @@ function capture() {
     a.download = "";
     a.click();
 }
+
+function serie() {
+    let label = document.getElementById("label").value || "default";
+    let url = "/capture?label=" + label + "&n=" + counter;
+    counter++;
+    document.getElementById("counter").innerText = counter;
+
+    // Téléchargement automatique
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    a.click();
+}
+
 </script>
 
 </body>
@@ -157,6 +171,32 @@ def start_server(ip):
             cl.close()
 
             print("Capture:", filename)
+
+        # -------- SERIE --------
+        elif "GET /serie" in req:
+            label = get_param(req, "label")
+            if label == "":
+                label = "default"
+
+            # compteur par label
+            if label not in photo_counter:
+                photo_counter[label] = 0
+            photo_counter[label] += 1
+            num = photo_counter[label]
+
+            filename = "photo_%s_%04d.jpg" % (label, num)
+
+            gc.collect()
+            buf = camera.capture()  # Capture haute qualité possible
+
+            cl.send("HTTP/1.1 200 OK\r\n")
+            cl.send("Content-Type: image/jpeg\r\n")
+            cl.send("Content-Disposition: attachment; filename=%s\r\n" % filename)
+            cl.send("Content-Length: %d\r\n\r\n" % len(buf))
+            cl.send(buf)
+            cl.close()
+
+            print("Serie:", filename)
 
         # -------- PAGE WEB --------
         else:

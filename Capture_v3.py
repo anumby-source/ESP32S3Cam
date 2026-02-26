@@ -141,8 +141,9 @@ def get_param(req, name, default=None):
 def handle_stream(cl):
     global busy
 
-    cl.send("HTTP/1.1 200 OK\r\n")
-    cl.send("Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n")
+    if not cl is None:
+        cl.send("HTTP/1.1 200 OK\r\n")
+        cl.send("Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n")
 
     try:
         while True:
@@ -152,15 +153,18 @@ def handle_stream(cl):
 
             gc.collect()
             buf = camera.capture()
+            # print("ok")
 
-            cl.send("--frame\r\n")
-            cl.send("Content-Type: image/jpeg\r\n\r\n")
-            cl.send(buf)
-            cl.send("\r\n")
+            if not cl is None:
+                cl.send("--frame\r\n")
+                cl.send("Content-Type: image/jpeg\r\n\r\n")
+                cl.send(buf)
+                cl.send("\r\n")
     except:
         pass
 
-    cl.close()
+    if not cl is None:
+        cl.close()
 
 
 # ------------------
@@ -387,9 +391,12 @@ def start_server(ip):
 # MAIN
 # ------------------
 camera_init()
+"""
 ip = connect_wifi()
 ensure_dir(DATASET_DIR)
 index = load_index()
 start_server(ip)
+"""
+handle_stream(None)
 
 
