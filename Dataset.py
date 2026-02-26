@@ -1,10 +1,9 @@
+
 import network
 import socket
 import time
 import gc
-import os
 import machine
-import ujson
 import camera
 import camera_init
 
@@ -67,6 +66,7 @@ Content-Type: text/html
 <head>
 <meta charset="utf-8">
 <title>ESP32-S3 Camera</title>
+
 <style>
 body { background:#111; color:white; text-align:center; font-family:Arial; }
 img { width:320px; border-radius:10px; margin-top:10px; }
@@ -81,7 +81,6 @@ input { padding:5px; font-size:16px; width:80px; }
 
 .complete { color:lime; font-weight:bold; }
 .running { color:orange; font-weight:bold; }
-
 </style>
 
 <script>
@@ -98,8 +97,7 @@ function disableButtons(state) {
 }
 
 function startVideo() {
-    if (runningSerie) return;
-    fetch('/start');
+    if (runningVideo) return;
     runningVideo = true;
     frames = 0;
     startTime = Date.now();
@@ -107,18 +105,20 @@ function startVideo() {
 }
 
 function stopVideo() {
-    fetch('/stopvideo');
     runningVideo = false;
 }
 
 function update() {
     if (!runningVideo) return;
+
     let img = document.getElementById("cam");
     img.src = "/frame?t=" + new Date().getTime();
+
     frames++;
     let now = Date.now();
     let fps = (frames / ((now - startTime)/1000)).toFixed(1);
     document.getElementById("fps").innerHTML = fps + " FPS";
+
     setTimeout(update, 200);
 }
 
@@ -131,7 +131,6 @@ function takePhoto() {
 function startSerie() {
     if (runningSerie) return;
 
-    let label = document.getElementById("label").value;
     Ns = parseInt(document.getElementById("Ns").value);
     dtSerie = parseInt(document.getElementById("dt").value);
 
@@ -148,7 +147,12 @@ function startSerie() {
     runningSerie = true;
     disableButtons(true);
 
-    startVideo();
+    // 🔹 DÉMARRAGE AUTOMATIQUE DE LA VIDÉO
+    runningVideo = true;
+    frames = 0;
+    startTime = Date.now();
+    update();
+
     takeSeriePhoto();
 }
 
@@ -169,7 +173,7 @@ function takeSeriePhoto() {
         if (serieIndex >= Ns) {
 
             runningSerie = false;
-            stopVideo();
+            runningVideo = false;
             disableButtons(false);
 
             let status = document.getElementById("serieStatus");
@@ -323,3 +327,5 @@ camera.deinit()
 gc.collect()
 time.sleep(1)
 machine.reset()
+
+
