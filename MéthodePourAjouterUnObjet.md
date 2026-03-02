@@ -9,10 +9,10 @@ Utiliser le "ESP32-S3 Cam" en utilisant `Thonny` en exécutant le pogramme `Pyth
 ![img_3.png](img_3.png)
 
 Ce programme lance un serveur Web et affiche une page WEB qui propose plusieurs fonctionnalités:
-- tester la caméra sur la photo du panneau (options Start ou Photo)
+- tester la caméra sur la photo du panneau (options `Start` ou `Photo`)
 - lorsque les réglages semblent satisfaisants, 
-  - on choisir Ns=50 vues au moins
-  - on saisit le label
+  - on choisir `Ns=50` vues au moins
+  - on choisit le label
   - lancer une série de captures sur la photo choisie, en faisant varier l'orientation, la distance, l'angle de la caméra en s'assurant que l'objet reste visible dans la caméra
 
 Les images sont au départ, générées dans l'espace privé de Thonny. Et les images n'apparaissent 
