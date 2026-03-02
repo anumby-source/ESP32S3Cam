@@ -6,6 +6,8 @@ Choisir un panneau et imprimez-le. Identifier un label associé à l'objet, qui 
 
 Utiliser le "ESP32-S3 Cam" avec le logiciel `Python\InitDataset.py`
 
+![img_3.png](img_3.png)
+
 Ce programme lance un serveur Web et affiche une page WEB qui propose plusieurs fonctionnalités:
 - tester la caméra sur la photo du panneau (options Start ou Photo)
 - lorsque les réglages semblent satisfaisants, 
@@ -20,6 +22,8 @@ On doit aussi s'assurer que le set d'images on été déposées dans un dossier 
 ## Ensuite nous allons créer les descriptifs associés à chaque image. 
 
 Pour cela on exécute le programme `Python\SetDatasetXML.py`
+
+![img_4.png](img_4.png)
 
 Pour chaque image, on va ajuster la `BoundingBox` englobante entourant l'objet (clavier "s" pour sauvegarder les fichiers de description) sous le nome
 `dataset/xml/photo_<label>_<numéro>.xml`

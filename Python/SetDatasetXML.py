@@ -5,8 +5,8 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 # Chemins
-image_dir = "dataset/images"
-output_dir = "dataset/xml"
+image_dir = "../dataset/images"
+output_dir = "../dataset/xml"
 os.makedirs(output_dir, exist_ok=True)
 
 # Variables globales pour l'édition interactive
