@@ -4,7 +4,7 @@ Choisir un panneau et imprimez-le. Identifier un label associé à l'objet, qui 
 
 ## Création des images du dataset
 
-Utiliser le "ESP32-S3 Cam" avec le logiciel `Python\InitDataset.py`
+Utiliser le "ESP32-S3 Cam" en utilisant `Thonny` en exécutant le pogramme `Python\InitDataset.py`
 
 ![img_3.png](img_3.png)
 
@@ -15,7 +15,13 @@ Ce programme lance un serveur Web et affiche une page WEB qui propose plusieurs 
   - on saisit le label
   - lancer une série de captures sur la photo choisie, en faisant varier l'orientation, la distance, l'angle de la caméra en s'assurant que l'objet reste visible dans la caméra
 
-Cette action a généré 50 photos sous le nom `dataset\images\photo_<label>_<numéro>.jpg`
+Les images sont au départ, générées dans l'espace privé de Thonny. Et les images n'apparaissent 
+pas tant que le programme tourne. Il est donc important de quitter le programme puis raffraichir 
+l'affichage de l'espace privé de Thonny.
+
+Ensuite, on va transférer toutes les images dans le dossier du PC `dataset/images`
+
+Cette action a généré 50 photos (par label) sous le nom `dataset\images\photo_<label>_<numéro>.jpg`
 
 On doit aussi s'assurer que le set d'images on été déposées dans un dossier `dataset/images/photo*.jpg` (qui contenait déjà les autres photos du dataset complet)
 
