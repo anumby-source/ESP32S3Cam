@@ -6,20 +6,13 @@ import gc
 import machine
 import camera
 import camera_init
+import server
 
 # =====================
 # INIT CAMERA (EXTERNE)
 # =====================
 
 camera_init.camera_init()
-
-# =====================
-# CONFIG WIFI
-# =====================
-
-SSID = "ESP32-CAM"
-PASSWORD = "12345678"
-PORT = 80
 
 # =====================
 # COMPTEUR GLOBAL PHOTO SIMPLE
@@ -41,33 +34,62 @@ def save_counter(n):
 photo_n = load_counter()
 
 # =====================
-# WIFI AP
-# =====================
-
-ap = network.WLAN(network.AP_IF)
-ap.active(True)
-ap.config(essid=SSID, password=PASSWORD)
-
-while not ap.active():
-    time.sleep(0.2)
-
-print("IP:", ap.ifconfig()[0])
-
-# =====================
 # HTML
 # =====================
 
-def html():
-    return """HTTP/1.1 200 OK
-Content-Type: text/html
+def handle_request(request, conn):
+    global photo_n
 
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>ESP32-S3 Camera</title>
+    if "GET /frame" in request:
+        gc.collect()
+        buf = camera.capture()
+        conn.send("HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n")
+        conn.send(buf)
 
-<style>
+    elif "GET /photo" in request:
+        label = "default"
+        if "label=" in request:
+            start = request.find("label=") + 6
+            end = request.find(" ", start)
+            label = request[start:end]
+            label = label.replace("%20", "_")
+
+        photo_n += 1
+        save_counter(photo_n)
+
+        filename = "photo_{}_{}.jpg".format(label, photo_n)
+
+        gc.collect()
+        img = camera.capture()
+        with open(filename, "wb") as f:
+            f.write(img)
+
+        conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
+
+    elif "GET /serieshot" in request:
+        label = "default"
+        idx = 0
+
+        if "label=" in request:
+            start = request.find("label=") + 6
+            mid = request.find("&idx=")
+            label = request[start:mid]
+            label = label.replace("%20", "_")
+            idx = int(request[mid + 5:request.find(" ", mid)])
+
+        filename = "photo_{}_{:02d}.jpg".format(label, idx + 1)
+
+        gc.collect()
+        img = camera.capture()
+        with open(filename, "wb") as f:
+            f.write(img)
+
+        conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
+
+    else:
+        conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
+
+style = """
 body { background:#111; color:white; text-align:center; font-family:Arial; }
 img { width:320px; border-radius:10px; margin-top:10px; }
 button { padding:10px 20px; margin:5px; font-size:15px; border:none; border-radius:8px; }
@@ -81,9 +103,9 @@ input { padding:5px; font-size:16px; width:80px; }
 
 .complete { color:lime; font-weight:bold; }
 .running { color:orange; font-weight:bold; }
-</style>
+"""
 
-<script>
+script = """
 let runningVideo = false;
 let runningSerie = false;
 let frames = 0;
@@ -185,18 +207,9 @@ function takeSeriePhoto() {
         }
     });
 }
+"""
 
-function exitServer() {
-    fetch("/exit");
-}
-</script>
-</head>
-
-<body>
-<div class="card">
-
-<h2>ESP32-S3 OV2640</h2>
-
+body = """
 <img id="cam" src="/frame">
 <p id="fps">0 FPS</p>
 
@@ -222,110 +235,18 @@ function exitServer() {
 <p id="serieStatus">Série : <span id="serieNum">0 / 0</span></p>
 
 <br>
-<button class="exit" onclick="exitServer()">Exit</button>
-
-</div>
-</body>
-</html>
 """
 
-# =====================
-# SERVER
-# =====================
 
-def create_server():
-    s = socket.socket()
-    try:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    except:
-        pass
-    s.bind(("0.0.0.0", PORT))
-    s.listen(5)
-    s.settimeout(2)
-    return s
+serv = server.Server(title="ESP32-S3 Camera")
+serv.set_style(style)
+serv.set_script(script)
+serv.set_body(body)
 
-server = create_server()
-running = True
+serv.run(handle_request)
 
-while running:
-    try:
-        conn, addr = server.accept()
-    except OSError:
-        continue
-
-    try:
-        request = conn.recv(1024).decode()
-
-        if "GET / " in request:
-            conn.send(html())
-
-        elif "GET /frame" in request:
-            gc.collect()
-            buf = camera.capture()
-            conn.send("HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n\r\n")
-            conn.send(buf)
-
-        elif "GET /photo" in request:
-            label = "default"
-            if "label=" in request:
-                start = request.find("label=") + 6
-                end = request.find(" ", start)
-                label = request[start:end]
-                label = label.replace("%20", "_")
-
-            photo_n += 1
-            save_counter(photo_n)
-
-            filename = "photo_{}_{}.jpg".format(label, photo_n)
-
-            gc.collect()
-            img = camera.capture()
-            with open(filename, "wb") as f:
-                f.write(img)
-
-            conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
-
-        elif "GET /serieshot" in request:
-            label = "default"
-            idx = 0
-
-            if "label=" in request:
-                start = request.find("label=") + 6
-                mid = request.find("&idx=")
-                label = request[start:mid]
-                label = label.replace("%20", "_")
-                idx = int(request[mid+5:request.find(" ", mid)])
-
-            filename = "photo_{}_{:02d}.jpg".format(label, idx+1)
-
-            gc.collect()
-            img = camera.capture()
-            with open(filename, "wb") as f:
-                f.write(img)
-
-            conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
-
-        elif "GET /exit" in request:
-            conn.send("HTTP/1.1 200 OK\r\n\r\nBYE")
-            running = False
-
-        else:
-            conn.send("HTTP/1.1 404 Not Found\r\n\r\n")
-
-    except Exception as e:
-        print("Erreur:", e)
-
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
-
-server.close()
-ap.active(False)
+serv.stop_server()
 camera.deinit()
 gc.collect()
-time.sleep(1)
-machine.reset()
 
 

@@ -8,7 +8,8 @@ Utiliser le "ESP32-S3 Cam" en utilisant `Thonny` en exécutant le pogramme `Pyth
 
 ![img_3.png](img_3.png)
 
-Ce programme lance un serveur Web et affiche une page WEB qui propose plusieurs fonctionnalités:
+Ce programme lance un serveur Web `ESP32-CAM` et affiche une page WEB qui propose plusieurs fonctionnalités:
+- se connecter sur sur le serveur et afficher la page `192.168.4.1` sur un navigateur
 - tester la caméra sur la photo du panneau (options `Start` ou `Photo`)
 - lorsque les réglages semblent satisfaisants, 
   - on choisir `Ns=50` vues au moins
@@ -44,5 +45,10 @@ On termine la préparation du dataset en créant un ZIP à partir de dossier `da
 - créer un dataset P associé
 - remplir le dataset à partir du zip créé précédemment (`dataset.zip`) charger dans le projet
 - créer une tâche d'apprentissage
-- télécharger le résultat sous forme d'un zip contenant le modèle kmodel et un programme main à charger dans le K210
+- télécharger le résultat sous forme d'un zip contenant le modèle kmodel 
+   et un programme main à charger dans le K210
 
+# Bien sûr la dernière étape va consister à télécharger le modèle 
+kmodel que l'on installe grâce à l'application `kflash_gui`
+
+Le modèle s'installe à l'adresse `0x300000`
