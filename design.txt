@@ -1,0 +1,318 @@
+je crée une classe Robot pour enregistrer l'etat du moteur du robot. il y a 5 états : -2, -1, 0, 1, 2 selon que le robot avance,  recule, vitesse1, vitesse2, arrêt. les commandes du control-panel changent l'état manuellement . je voudrais afficher dans la div control-panel, un afficheur de cet état. 5 couleurs : dont vert pour arrêt
+
+
+
+
+
+Hier 18:03
+
+
+
+
+
+
+
+
+
+Voici comment créer une classe Robot pour gérer l'état du moteur et afficher cet état dans votre interface avec un afficheur coloré. Je vais vous fournir le code pour la classe Robot, la mise à jour de l'interface, et l'affichage de l'état avec des couleurs distinctes.
+
+1. Créez la classe Robot en Python
+Ajoutez cette classe dans votre code MicroPython pour gérer l'état du robot :
+python
+Copier
+
+class Robot:
+    def __init__(self):
+        self.etat = 0  # État initial : arrêté
+
+    def set_etat(self, nouvel_etat):
+        if nouvel_etat in [-2, -1, 0, 1, 2]:
+            self.etat = nouvel_etat
+            print(f"État du robot mis à jour : {self.etat}")
+        else:
+            print(f"État invalide : {nouvel_etat}")
+
+    def get_etat(self):
+        return self.etat
+
+# Instanciez la classe Robot
+robot = Robot()
+
+
+2. Mettez à jour le gestionnaire de requêtes HTTP
+Modifiez la fonction handle_request pour gérer les commandes du panneau de contrôle et mettre à jour l'état du robot :
+python
+Copier
+
+def handle_request(server, request, conn):
+    m = re.match(r"GET ([^ ]*) HTTP", request)
+    if not m:
+        conn.send("HTTP/1.1 400 Bad Request\r\n\r\n")
+        return False
+
+    path = m.group(1)
+    if "/static/" in path:
+        f = path.split("/static/")[1].split()[0]
+        try:
+            with open(f"/static/{f}", "rb") as file:
+                conn.send("HTTP/1.1 200 OK\r\nContent-Type: image/png\r\n\r\n")
+                conn.send(file.read())
+        except OSError as e:
+            print(f"Erreur: {e}")
+            conn.send("HTTP/1.1 404 Not Found\r\n\r\n")
+    elif path.startswith("/command?cmd="):
+        cmd = path.split("cmd=")[1].split()[0]
+        if cmd == "forward":
+            robot.set_etat(1)
+        elif cmd == "backward":
+            robot.set_etat(-1)
+        elif cmd == "speed1":
+            robot.set_etat(1)
+        elif cmd == "speed2":
+            robot.set_etat(2)
+        elif cmd == "stop":
+            robot.set_etat(0)
+        conn.send("HTTP/1.1 200 OK\r\n\r\n")
+    else:
+        response = server.html().replace("{etat_robot}", str(robot.get_etat()))
+        conn.send(response)
+    conn.close()
+    return False
+
+
+3. Mettez à jour le HTML pour afficher l'état du robot
+Ajoutez un afficheur pour l'état du robot dans la div control-panel :
+python
+Copier
+
+body = f"""
+    <!-- Zone de contrôle -->
+    <div class="control-panel">
+        <h2>Commandes</h2>
+        <div class="etat-robot" id="etat-robot" style="background-color: {get_etat_color(robot.get_etat())};">
+            État : {robot.get_etat()}
+        </div>
+        <div class="boutons-commande">
+            <button onclick="sendCommand('forward')">Avant</button>
+            <button onclick="sendCommand('backward')">Arrière</button>
+            <button onclick="sendCommand('left')">Gauche</button>
+            <button onclick="sendCommand('right')">Droite</button>
+            <button onclick="sendCommand('stop')">Stop</button>
+            <button onclick="sendCommand('speed1')">Vitesse 1</button>
+            <button onclick="sendCommand('speed2')">Vitesse 2</button>
+            <button onclick="resetEncadrements()">Réinitialiser</button>
+        </div>
+    </div>
+
+    <!-- Zone de visualisation -->
+    <div id="panneaux-container">
+        <div class="panneau" id="panneau1"><img src="/static/30.png" alt="Panneau 30"></div>
+        <div class="panneau" id="panneau2"><img src="/static/cedez_le_passage.png" alt="Cédez le passage"></div>
+        <div class="panneau" id="panneau3"><img src="/static/pietons.png" alt="Piétons"></div>
+        <div class="panneau" id="panneau4"><img src="/static/priorite_a_droite.png" alt="Priorité à droite"></div>
+        <div class="panneau" id="panneau5"><img src="/static/rond_point.png" alt="Rond-point"></div>
+        <div class="panneau" id="panneau6"><img src="/static/stationnement.png" alt="Stationnement"></div>
+    </div>
+"""
+
+
+4. Ajoutez une fonction pour obtenir la couleur de l'état
+Ajoutez cette fonction pour associer une couleur à chaque état :
+python
+Copier
+
+def get_etat_color(etat):
+    colors = {
+        -2: "#FF6347",  # Tomate (Recule vite)
+        -1: "#FFA07A",  # Saumon (Recule lentement)
+        0: "#32CD32",   # Vert lime (Arrêt)
+        1: "#4169E1",   # Bleu royal (Vitesse 1)
+        2: "#1E90FF"   # Bleu dodger (Vitesse 2)
+    }
+    return colors.get(etat, "#808080")  # Gris par défaut
+
+
+5. Mettez à jour le CSS pour l'afficheur d'état
+Ajoutez le style pour l'afficheur d'état dans la partie style :
+python
+Copier
+
+style = """
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+    .control-panel {
+        background: #ffffff;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .etat-robot {
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    .boutons-commande {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .control-panel button {
+        padding: 12px 24px;
+        margin: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        background-color: #4a6fa5;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .control-panel button:hover {
+        background-color: #3a5a8f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    .control-panel button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    #panneaux-container {
+        width: 500px;
+        height: 500px;
+        position: relative;
+        background-color: #f0f0f0;
+        color: red;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    .panneau {
+        width: 50px;
+        height: 50px;
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        transition: border 0.2s, transform 0.2s;
+    }
+    .panneau:hover {
+        transform: scale(1.05);
+    }
+    .panneau.encadre {
+        border: 3px solid red;
+    }
+    .panneau img {
+        max-width: 90%;
+        max-height: 90%;
+    }
+    #panneau1 { top: 20px; left: 20px; }
+    #panneau2 { top: 20px; left: 120px; }
+    #panneau3 { top: 20px; left: 220px; }
+    #panneau4 { top: 120px; left: 20px; }
+    #panneau5 { top: 120px; left: 120px; }
+    #panneau6 { top: 120px; left: 220px; }
+"""
+
+
+6. Mettez à jour le JavaScript pour actualiser l'état
+Ajoutez une fonction pour actualiser l'affichage de l'état du robot :
+python
+Copier
+
+script = """
+    // Envoi des commandes au robot
+    function sendCommand(cmd) {
+        fetch('/command?cmd=' + cmd)
+            .then(response => response.text())
+            .then(() => {
+                updateEtatRobot();
+            });
+    }
+
+    // Réinitialiser tous les encadrements
+    function resetEncadrements() {
+        document.querySelectorAll('.panneau').forEach(panneau => {
+            panneau.classList.remove('encadre');
+        });
+    }
+
+    // Encadrer un panneau spécifique
+    function encadrerPanneau(id) {
+        const panneau = document.getElementById(id);
+        if (panneau) {
+            panneau.classList.add('encadre');
+        }
+    }
+
+    // Mettre à jour l'affichage de l'état du robot
+    function updateEtatRobot() {
+        fetch('/etat')
+            .then(response => response.text())
+            .then(etat => {
+                const etatRobotDiv = document.getElementById('etat-robot');
+                let color;
+                switch(parseInt(etat)) {
+                    case -2: color = "#FF6347"; break; // Tomate
+                    case -1: color = "#FFA07A"; break; // Saumon
+                    case 0: color = "#32CD32"; break;  // Vert lime
+                    case 1: color = "#4169E1"; break;  // Bleu royal
+                    case 2: color = "#1E90FF"; break;  // Bleu dodger
+                    default: color = "#808080";        // Gris
+                }
+                etatRobotDiv.style.backgroundColor = color;
+                etatRobotDiv.textContent = "État : " + etat;
+            });
+    }
+
+    // Gestion des clics sur les panneaux
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Script chargé et DOM prêt !");
+        document.querySelectorAll('.panneau').forEach(panneau => {
+            panneau.addEventListener('click', function() {
+                this.classList.toggle('encadre');
+                console.log("Clic détecté sur un panneau !");
+            });
+        });
+        updateEtatRobot(); // Mettre à jour l'état au chargement
+    });
+"""
+
+
+7. Ajoutez une route pour récupérer l'état du robot
+Ajoutez une route /etat dans votre gestionnaire de requêtes pour renvoyer l'état actuel du robot :
+python
+Copier
+
+elif path == "/etat":
+    conn.send(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n{robot.get_etat()}")
+
+
+Résumé des modifications :
+
+Classe Robot : Gère l'état du moteur.
+Afficheur d'état : Affiche l'état actuel avec une couleur associée.
+Mise à jour dynamique : L'état est mis à jour après chaque commande.
+Couleurs distinctes : Chaque état a une couleur spécifique (vert pour l'arrêt).
+Avec ces modifications, votre interface affichera l'état du robot en temps réel avec un afficheur coloré. 😊
+
+
+
+
+
+
+
+
+
+
+
+
+
