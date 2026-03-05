@@ -1,21 +1,5 @@
 je crée une classe Robot pour enregistrer l'etat du moteur du robot. il y a 5 états : -2, -1, 0, 1, 2 selon que le robot avance,  recule, vitesse1, vitesse2, arrêt. les commandes du control-panel changent l'état manuellement . je voudrais afficher dans la div control-panel, un afficheur de cet état. 5 couleurs : dont vert pour arrêt
 
-
-
-
-
-Hier 18:03
-
-
-
-
-
-
-
-
-
-Voici comment créer une classe Robot pour gérer l'état du moteur et afficher cet état dans votre interface avec un afficheur coloré. Je vais vous fournir le code pour la classe Robot, la mise à jour de l'interface, et l'affichage de l'état avec des couleurs distinctes.
-
 1. Créez la classe Robot en Python
 Ajoutez cette classe dans votre code MicroPython pour gérer l'état du robot :
 python
@@ -307,12 +291,31 @@ Avec ces modifications, votre interface affichera l'état du robot en temps rée
 
 
 
+déroulement du jeu:
+- dès que le panneau start est détecté, le jeu commence
+- on démarre un chronomètre
+- le jeu se termine quand on a détecté le panneau stop
+- il y a des règles associées à la détection des panneaux. Le non-respect des règles donne des pénalités
+- règles:
+   - tous les panneaux doivent être détectés lors du trajet
+   - 30: vitesse 1
+   - cedez_le_passage: stop pendant 3 secondes
+   - pietons: stop pendant 3 secondes
+   - priorite_a_droite: vitesse 1,
+   - rond_point: vitesse 1
+   - stationnement: pas d'arrêt: v1 ou v2 obligatoire
+ - on affichera le temps et les pénalités (dans la div des panneaux)
 
-
-
-
-
-
-
-
+    elif path.startswith("/detect?id="):
+        # Exemple : /detect?id=panneau1
+        panneau_id = path.split("id=")[1]
+        response = f"""
+        <script>
+            window.onload = function() {{
+                encadrerPanneau('{panneau_id}');
+            }};
+        </script>
+        """
+        conn.send("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
+        conn.send(response)
 

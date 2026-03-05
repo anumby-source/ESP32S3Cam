@@ -147,7 +147,8 @@ class Server:
                     conn.close()
 
             except Exception as e:
-                print("Erreur:", e)
+                # print("Erreur:", e)
+                pass
 
             finally:
                 try:
