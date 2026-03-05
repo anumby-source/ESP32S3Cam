@@ -3,6 +3,7 @@
 ![img_7.png](img_7.png)
 
 Le programme Python/control.py permet de simuler le jeu du robot.
+(notez que ce programme a besoin de la librairie Python/server.py)
 
 - Ce programme fonctionne sur un ESP32
 - le programme démarre un serveur web avec deux zones IHM:
