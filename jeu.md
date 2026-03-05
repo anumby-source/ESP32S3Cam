@@ -20,7 +20,7 @@ Le programme Python/control.py permet de simuler le jeu du robot.
 
 ![img_6.png](img_6.png)
 
-- les panneaux à installer sur le trajet sont visualiser (sans préoccupation de leur localisaion réelle)
+- les panneaux à installer sur le trajet sont visualisés (sans préoccupation de leur localisaion réelle)
 - cliquer sur un panneau émule la reconnaissance par le K210 (le panneau apparait encadré en rouge)
 - une ligne d'information en haut de la zone donne les états du jeu (temps écoulé, pénalités, temps total)
 
