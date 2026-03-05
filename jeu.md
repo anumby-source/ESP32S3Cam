@@ -1,5 +1,7 @@
 # Fonctionnement du simulateur de jeu
 
+![img_7.png](img_7.png)
+
 Le programme Python/control.py permet de simuler le jeu du robot.
 
 - Ce programme fonctionne sur un ESP32
