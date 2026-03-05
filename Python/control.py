@@ -1,36 +1,8 @@
 import network
 import espnow
-import socket
-import ujson
 import _thread
-
-def create_server():
-    s = socket.socket()
-    try:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    except:
-        pass
-    s.bind(("0.0.0.0", 80))
-    s.listen(5)
-    s.settimeout(2)
-    return s
-
-
-ap = network.WLAN(network.AP_IF)
-ap.active(True)
-ap.config(essid="ESP32-Robot", password="12345678")
-
-while not ap.active():
-    time.sleep(0.2)
-
-print("IP:", ap.ifconfig()[0])
-
-
-"""
-ap = network.WLAN(network.AP_IF)
-ap.active(True)
-print("AP configuré. Adresse IP:", ap.ifconfig()[0])
-"""
+import server
+import re
 
 # --- Configuration ESP-NOW ---
 sta = network.WLAN(network.STA_IF)
@@ -64,204 +36,200 @@ _thread.start_new_thread(espnow_receive, ())
 
 #====================  HTML avec carte de fond et animations
 
-html = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Contrôle Robot</title>
-    <style>
+style = """
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .control-panel { background: #f0f0f0; padding: 10px; margin-bottom: 20px; }
-        .control-panel button { padding: 10px 20px; margin: 5px; }
-        .map-container {
-            background: #e0e0e0;
-            padding: 10px;
-            height: 500px;
-            position: relative;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 300 300"><rect width="300" height="300" fill="lightgray"/><path d="M50,150 Q150,50 250,150" stroke="darkgray" stroke-width="30" fill="none"/></svg>');
-            background-size: cover;
+        .control-panel {
+            background: #ffffff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            color: red;
         }
-        .road-sign {
-            position: absolute;
-            transform: translate(-50%, -50%);
-            opacity: 0;
-            animation: fadeIn 0.5s forwards;
+        .control-panel button {
+            padding: 10px 20px;
+            margin: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            background-color: #4a6fa5;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .control-panel button:hover {
+            background-color: #3a5a8f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-    </style>
-</head>
-<body>
-    <h1>Contrôle du Robot</h1>
+        .control-panel button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #panneaux-container {
+            width: 500px;
+            height: 200px;
+            position: relative; /* Pour servir de référence aux éléments absolus */
+            background-color: white;
+            color: red;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* Pour éviter que les panneaux ne débordent */
+        }
+        .panneau {
+            width: 50px;
+            height: 50px;
+            position: absolute; /* Position absolue */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: border 0.2s;
+        }
+        .panneau:hover {
+            transform: scale(1.05);
+        }
+        .panneau.encadre {
+            border: 3px solid red;
+        }
+        .panneau img {
+            max-width: 90%;
+            max-height: 90%;
+        }
+        #panneau1 { top: 20%; left: 20%; }
+        #panneau2 { top: 20%; left: 50%; }
+        #panneau3 { top: 20%; left: 80%; }
+        #panneau4 { top: 50%; left: 20%; }
+        #panneau5 { top: 50%; left: 50%; }
+        #panneau6 { top: 50%; left: 80%; }
+        #panneau7 { top: 30%; left: 5%; }
+        #panneau8 { top: 30%; left: 90%; }
 
+"""
+
+body = """
     <!-- Zone de contrôle -->
     <div class="control-panel">
         <h2>Commandes</h2>
         <button onclick="sendCommand('forward')">Avant</button>
-        <button onclick="sendCommand('backward')">Arrière</button>
+        <button onclick="sendCommand('stop')">Stop</button>
+        <br>
         <button onclick="sendCommand('left')">Gauche</button>
         <button onclick="sendCommand('right')">Droite</button>
-        <button onclick="sendCommand('stop')">Stop</button>
+        <br>
+        <button onclick="sendCommand('backward')">Arrière</button>
+        <br>
         <button onclick="sendCommand('speed1')">Vitesse 1</button>
         <button onclick="sendCommand('speed2')">Vitesse 2</button>
+        <br>
+        <button onclick="resetEncadrements()">Réinitialiser</button>
     </div>
 
     <!-- Zone de visualisation -->
-    <div class="map-container" id="map">
-        <h2>Trajet et panneaux détectés</h2>
+    <div id="panneaux-container">
+        <div class="panneau" id="panneau1"><img src="/static/30.png" alt="Limitation 30"></div>
+        <div class="panneau" id="panneau2"><img src="/static/cedez_le_passage.png" alt="Cédez le passage"></div>
+        <div class="panneau" id="panneau3"><img src="/static/pietons.png" alt="Passage piétons"></div>
+        <div class="panneau" id="panneau4"><img src="/static/priorite_a_droite.png" alt="Priorité à droite"></div>
+        <div class="panneau" id="panneau5"><img src="/static/rond_point.png" alt="Rond point"></div>
+        <div class="panneau" id="panneau6"><img src="/static/stationnement.png" alt="Stationnement interdit"></div>
+        <div class="panneau" id="panneau7"><img src="/static/start.png" alt="Start"></div>
+        <div class="panneau" id="panneau8"><img src="/static/stop.png" alt="Stop"></div>
     </div>
+"""
 
-    <script>
+script = """
         // Envoi des commandes au robot
         function sendCommand(cmd) {
             fetch('/command?cmd=' + cmd)
-                .then(response => response.text())
-                .then(data => console.log(data));
         }
-
-        // Mise à jour des panneaux détectés
-        function updateSigns() {
-            fetch('/signs')
-                .then(response => response.json())
-                .then(signs => {
-                    const map = document.getElementById('map');
-                    // Conserve les panneaux existants pour éviter les clignotements
-                    const existingSigns = map.querySelectorAll('.road-sign');
-                    existingSigns.forEach(sign => sign.remove());
-
-                    signs.forEach(sign => {
-                        const signElement = document.createElement('div');
-                        signElement.className = 'road-sign';
-                        signElement.style.left = sign.x + 'px';
-                        signElement.style.top = sign.y + 'px';
-                        signElement.innerHTML = getSignSVG(sign.type);
-                        map.appendChild(signElement);
-                    });
+        
+        // Réinitialiser tous les encadrements
+        function resetEncadrements() {
+            document.querySelectorAll('.panneau').forEach(panneau => {
+                panneau.classList.remove('encadre');
+            });
+        }
+        
+        // Encadrer un panneau spécifique
+        function encadrerPanneau(id) {
+            const panneau = document.getElementById(id);
+            if (panneau) {
+                panneau.classList.add('encadre');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.panneau').forEach(panneau => {
+                panneau.addEventListener('click', function() {
+                    this.classList.toggle('encadre');
+                    console.log("Click detecte !");
                 });
-        }
-
-        // SVG pour chaque panneau
-        function getSignSVG(type) {
-            const svgs = {
-                "stop": `
-                    <svg width="10" height="10" viewBox="0 0 24 24">
-                        <rect x="4" y="4" width="16" height="16" fill="red" rx="2" />
-                        <text x="12" y="15" font-family="Arial" font-size="12" fill="white" text-anchor="middle">STOP</text>
-                    </svg>
-                `,
-                "parking": `
-                    <svg width="10" height="10" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" fill="blue" />
-                        <text x="12" y="15" font-family="Arial" font-size="12" fill="white" text-anchor="middle">P</text>
-                    </svg>
-                `,
-                "crosswalk": `
-                    <svg width="10" height="10" viewBox="0 0 24 24">
-                        <rect x="4" y="4" width="16" height="16" fill="blue" rx="2" />
-                        <path d="M8 10v4h3v-4h-3zm5 0v4h3v-4h-3z" fill="white" />
-                    </svg>
-                `,
-                "roundabout": `
-                    <svg width="40" height="40" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" fill="blue" />
-                        <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0-2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z" fill="white" />
-                    </svg>
-                `,
-                "priority_right": `
-                    <svg width="40" height="40" viewBox="0 0 24 24">
-                        <rect x="4" y="4" width="16" height="16" fill="white" stroke="red" stroke-width="2" />
-                        <path d="M12 8l4 4-4 4" stroke="red" stroke-width="2" fill="none" />
-                    </svg>
-                `,
-                "yield": `
-                    <svg width="40" height="40" viewBox="0 0 24 24">
-                        <rect x="4" y="4" width="16" height="16" fill="white" stroke="red" stroke-width="2" />
-                        <text x="12" y="15" font-family="Arial" font-size="10" fill="red" text-anchor="middle">YIELD</text>
-                    </svg>
-                `,
-                "speed30": `
-                    <svg width="40" height="40" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" fill="white" stroke="red" stroke-width="2" />
-                        <text x="12" y="15" font-family="Arial" font-size="12" fill="red" text-anchor="middle">30</text>
-                    </svg>
-                `
-            };
-            return svgs[type] || `
-                <svg width="40" height="40" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" fill="gray" />
-                    <text x="12" y="15" font-family="Arial" font-size="12" fill="white" text-anchor="middle">?</text>
-                </svg>
-            `;
-        }
-
+            });        
+        });
+        
+        
         // Mise à jour périodique
-        setInterval(updateSigns, 1000);
-    </script>
-</body>
-</html>
+        // setInterval(updateSigns, 1000);
+"""
+
+"""
 """
 
 # ==========  Gestion des requêtes HTTP et lancement du serveur
 
 # --- Gestion des requêtes HTTP ---
-def handle_request(request):
-    if request.startswith("GET /command?cmd="):
-        cmd = request.split("cmd=")[1].split(" ")[0]
-        print("Commande reçue:", cmd)
-        # Logique pour contrôler le robot (ex: PWM, GPIO)
-        return "OK"
-    elif request.startswith("GET /signs"):
-        return ujson.dumps(detected_signs)
+def handle_request(server, request, conn):
+    m = re.match(r"GET ([^ ]*) HTTP", request)
+    if not m:
+        conn.send("HTTP/1.1 400 Bad Request\r\n\r\n")
+        return False
+
+    print("my handle request=", m.group(1))
+    path = m.group(1)
+    if "/static/" in path:
+        print("static file")
+        f = path.split("/static/")[1].split()[0]
+        try:
+            with open(f"/static/{f}", "rb") as f:
+                conn.send("HTTP/1.1 200 OK\r\nContent-Type: image/png\r\n\r\n")
+                conn.send(f.read())
+        except OSError as e:
+            print(f"Erreur: {e}")
+            conn.send("HTTP/1.1 404 Not Found\r\n\r\n")
+    elif path.startswith("/detect?"):
+        # Exemple : /detect?id=panneau1
+        panneau_id = path.split("id=")[1]
+        response = f"""
+        <script>
+            window.onload = function() {{
+                encadrerPanneau('{panneau_id}');
+            }};
+        </script>
+        """
+        conn.send("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
+        conn.send(response)
+    elif path.startswith("/command?cmd"):
+        cmd = path.split("cmd=")[1]
+        print("commande=", cmd)
+        conn.send("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
     else:
-        return html
+        response = server.html()
+        conn.send(response)
+    conn.close()
+    return True
+
 
 # --- Lancement du serveur ---
-"""
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('0.0.0.0', 80))
-s.listen(5)
-print("Serveur démarré. Attente de connexions...")
-"""
-server = create_server()
-running = True
-while running:
-    try:
-        conn, addr = server.accept()
-    except OSError:
-        continue
+serv = server.Server(title="Robot")
+serv.set_style(style)
+serv.set_script(script)
+serv.set_body(body)
 
-    try:
- 
-        request = conn.recv(1024).decode()
-        response = handle_request(request)
-        conn.send('HTTP/1.1 200 OK\nContent-Type: text/html\n\n' + response)
-        conn.close()
-
-        """
-        elif "GET /exit" in request:
-            conn.send("HTTP/1.1 200 OK\r\n\r\nBYE")
-            running = False
-
-        else:
-            conn.send("HTTP/1.1 404 Not Found\r\n\r\n")
-        """
-
-    except Exception as e:
-        print("Erreur:", e)
-
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
-
-server.close()
-ap.active(False)
-camera.deinit()
-gc.collect()
-time.sleep(1)
-machine.reset()
+serv.run(handle_request)
+serv.stop_server()
 
 

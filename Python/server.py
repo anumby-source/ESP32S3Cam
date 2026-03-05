@@ -74,7 +74,8 @@ class Server:
     .exit { background:#900; color:white; }
     .card { background:#222; padding:20px; border-radius:15px; display:inline-block; }
     input { padding:5px; font-size:16px; width:80px; }
-    .running { color:orange; font-weight:bold; } """ + self.style + """
+    .running { color:orange; font-weight:bold; }
+    """ + self.style + """
     </style>
 
     <script>
@@ -82,14 +83,19 @@ class Server:
     function exitServer() {
         fetch("/exit");
     }
+    function testServer() {
+        fetch("/test");
+    }
+    
+    """ + self.script + """
     </script>
-    <script>""" + self.script + """</script>
+
     </head>
 
     <body>
     <div class="card">
 
-    <h2>ESP32-S3 OV2640</h2>
+    <h2>""" + self.title + """</h2>
     <br>""" + self.body + """
     <button class="exit" onclick="exitServer()">Exit</button>
 
@@ -98,11 +104,13 @@ class Server:
     </html>
     """
 
+    #     <button class="exit" onclick="testServer()">Test</button>
+
     def handle_request(self, request, conn):
         conn.send('HTTP/1.1 200 OK\nContent-Type: text/html\n\n')
         conn.close()
 
-    def run(self, handle_request=None):
+    def run(self, my_handle_request=None):
         self.running = True
 
         while self.running:
@@ -113,19 +121,30 @@ class Server:
 
             try:
                 request = conn.recv(1024).decode()
+                # print("server> request", request[0:60])
 
-                if "GET / " in request:
-                    conn.send(self.html())
+                if not my_handle_request is None:
+                    # print("handling my request", request[0:60])
+                    if my_handle_request(self, request, conn):
+                        conn.send('HTTP/1.1 200 OK\nContent-Type: text/html\n\n')
+                        conn.close()
+                        continue
+                        
 
-                elif "GET /exit" in request:
+                if "GET /exit" in request:
                     conn.send("HTTP/1.1 200 OK\r\n\r\nBYE")
                     self.running = False
 
-                elif not handle_request is None:
-                    handle_request(request, conn)
+                # elif "GET /test" in request:
+                #     conn.send("HTTP/1.1 200 OK\r\n\r\nTEST")
+
+                elif "GET / " in request:
+                    conn.send(self.html())
+                    conn.close()
 
                 else:
                     conn.send("HTTP/1.1 404 Not Found\r\n\r\n")
+                    conn.close()
 
             except Exception as e:
                 print("Erreur:", e)

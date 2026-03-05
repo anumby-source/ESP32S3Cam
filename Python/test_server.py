@@ -7,13 +7,21 @@ s.set_style ("""
 """)
 
 s.set_script("""
-function start() {
-    if (runningVideo) return;
-    startTime = Date.now();
+
+function runstart() {
+    fetch("/start");
 }
+
 """)
 
 s.set_body ("""
-<button class="start" onclick="start()">Start</button>
+<button class="start" onclick="runstart()">Start</button>
 """)
-s.run()
+
+
+# --- Gestion des requêtes HTTP ---
+def handle_request(server, request, conn):
+    print("my handle request=", request)
+    return False
+
+s.run(handle_request)
