@@ -33,3 +33,12 @@ Règle du jeu actuel:
   - stationnement interdit exige que le robot ne soit pas à l'arrêt
   - stop arrête le jeu
 
+## Evolutions futures
+
+L'objectif est de connecter réellement l'ESP32 pilotage des moteurs (via espnow) avec le K210
+Ainsi 
+- les commandes reflètent les commandes envoyées par la télécommande
+- les détections reflètent les détections du K210
+
+Seule la commande "Réinitialiser" restera accessible par l'opérateur
+
