@@ -1,0 +1,7 @@
+stationnement interdit
+priorité à droite
+piéton
+laisser passer
+p30
+stop
+start

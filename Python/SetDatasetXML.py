@@ -148,9 +148,19 @@ def create_pascal_voc_xml(img_name, img_width, img_height, img_depth, class_name
     print(f"Fichier XML sauvegardé : {xml_file}")
 
 # Parcourir toutes les images
+enlève l
+select = ["photo_05_22.jpg", "photo_05_26.jpg"]
 for img_name in os.listdir(image_dir):
     if img_name.endswith(".jpg"):
         img_path = os.path.join(image_dir, img_name)
+        # print(img_name)
+        if not select is None:
+            if img_name in select:
+                print("select", img_path)
+            else:
+                continue
+        else:
+            continue
         img = cv2.imread(img_path)
         h, w, d = img.shape
         class_name = img_name.split("_")[1]

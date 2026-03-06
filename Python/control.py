@@ -46,7 +46,8 @@ class Robot:
         self.penalties = 0
         self.game_active = False
         self.detected_signs = set()
-        self.required_signs = {"p30", "rond_point", "pietons", "cedez_le_passage", "priorite_a_droite", "stationnement", "stop"}
+        self.required_signs = {"p30", "pietons", "cedez_le_passage", "priorite_a_droite", "stationnement", "stop", "start"}
+        self.required_signs_id = {"p05", "p03", "p04", "p02", "p01", "p06", "p07"}
         self.stop_time = None
 
     def start_game(self):
@@ -67,21 +68,21 @@ class Robot:
         print(f"Pénalité ajoutée : {seconds} secondes")
 
     def detect_sign(self, sign_id):
-        if self.game_active and sign_id in self.required_signs:
+        if self.game_active and sign_id in self.required_signs_id:
             self.detected_signs.add(sign_id)
             print(f"Panneau détecté : {sign_id}")
 
             # Règles de pénalités
-            if sign_id in ["pietons", "cedez_le_passage", "priorite_a_droite"]:
+            if sign_id in ["p03", "p04", "p02"]:
                 if self.etat != 0:
                     self.add_penalty(5)  # 5 secondes de pénalité si on ne s'arrête pas
-            elif sign_id in ["p30", "rond_point"]:
+            elif sign_id in ["p05"]:
                 if self.speed != 1:
                     self.add_penalty(3)  # 3 secondes de pénalité si vitesse incorrecte
-            elif sign_id == "stationnement":
+            elif sign_id == "p01":
                 if self.etat == 0:
                     self.add_penalty(2)  # 2 secondes de pénalité si arrêté
-            elif sign_id == "stop":
+            elif sign_id == "p06":
                 self.stop_game()
 
     def get_elapsed_time(self):
@@ -224,14 +225,13 @@ style = """
             max-height: 90%;
         }
 
-        #p30 { top: 40%; left: 20%; }
-        #cedez_le_passage { top: 40%; left: 40%; }
-        #pietons { top: 40%; left: 60%; }
-        #priorite_a_droite { top: 80%; left: 20%; }
-        #rond_point { top: 80%; left: 40%; }
-        #stationnement { top: 80%; left: 60%; }
-        #start { top: 65%; left: 5%; }
-        #stop { top: 65%; left: 80%; }
+        #p05 { top: 40%; left: 20%; }
+        #p04 { top: 40%; left: 40%; }
+        #p03 { top: 40%; left: 60%; }
+        #p02 { top: 80%; left: 30%; }
+        #p01 { top: 80%; left: 50%; }
+        #p07 { top: 65%; left: 5%; }
+        #p06 { top: 65%; left: 80%; }
 
         #game-info {
             position: absolute;
@@ -261,12 +261,11 @@ body = """
         </div>
         <div class="boutons-commande">
             <button onclick="sendCommand('forward')">Avant</button>
+            <button onclick="sendCommand('backward')">Arrière</button>
             <button onclick="sendCommand('stop')">Stop</button>
             <br>
             <button onclick="sendCommand('left')">Gauche</button>
             <button onclick="sendCommand('right')">Droite</button>
-            <br>
-            <button onclick="sendCommand('backward')">Arrière</button>
             <br>
             <button onclick="sendCommand('speed1')">Vitesse 1</button>
             <button onclick="sendCommand('speed2')">Vitesse 2</button>
@@ -283,14 +282,13 @@ body = """
             Score total : <span id="total-score">0</span> secondes
         </div>
 
-        <div class="panneau" id="p30"><img src="/static/30.png" alt="Limitation 30"></div>
-        <div class="panneau" id="cedez_le_passage"><img src="/static/cedez_le_passage.png" alt="Cédez le passage"></div>
-        <div class="panneau" id="pietons"><img src="/static/pietons.png" alt="Passage piétons"></div>
-        <div class="panneau" id="priorite_a_droite"><img src="/static/priorite_a_droite.png" alt="Priorité à droite"></div>
-        <div class="panneau" id="rond_point"><img src="/static/rond_point.png" alt="Rond point"></div>
-        <div class="panneau" id="stationnement"><img src="/static/stationnement.png" alt="Stationnement interdit"></div>
-        <div class="panneau" id="start"><img src="/static/start.png" alt="Start"></div>
-        <div class="panneau" id="stop"><img src="/static/stop.png" alt="Stop"></div>
+        <div class="panneau" id="p05"><img src="/static/30.png" alt="Limitation 30"></div>
+        <div class="panneau" id="p04"><img src="/static/cedez_le_passage.png" alt="Cédez le passage"></div>
+        <div class="panneau" id="p03"><img src="/static/pietons.png" alt="Passage piétons"></div>
+        <div class="panneau" id="p02"><img src="/static/priorite_a_droite.png" alt="Priorité à droite"></div>
+        <div class="panneau" id="p01"><img src="/static/stationnement.png" alt="Stationnement interdit"></div>
+        <div class="panneau" id="p07"><img src="/static/start.png" alt="Start"></div>
+        <div class="panneau" id="p06"><img src="/static/stop.png" alt="Stop"></div>
     </div>
 """
 
@@ -424,9 +422,9 @@ def handle_request(server, request, conn):
         sign_id = path.split("id=")[1].split()[0]
         robot.detect_sign(sign_id)
         print("detect=", sign_id)
-        if sign_id == "start":
+        if sign_id == "p07":
             robot.start_game()
-        elif sign_id == "stop":
+        elif sign_id == "p06":
             robot.stop_game()
         conn.send("HTTP/1.1 200 OK\r\n\r\n")
     elif path.startswith("/command?cmd"):

@@ -29,7 +29,7 @@ Règle du jeu actuel:
 - le jeu démarre en cliquant le panneau de la flèche bleue. Ceci démarre le jeu et initialise le temps et les pénalités
 - différentes situations sont testées et apportent éventuellement de pénalités de temps
   - 30 exige que le robot soit en vitesse 1
-  - laisser le passage, priorité à droite, rond point exige que le robot soit en vitesse 1
+  - laisser le passage, priorité à droite exige que le robot soit en vitesse 1
   - passage piéton stoppe le robot pendant quelques secondes
   - stationnement interdit exige que le robot ne soit pas à l'arrêt
   - stop arrête le jeu
