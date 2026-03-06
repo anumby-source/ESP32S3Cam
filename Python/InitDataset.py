@@ -37,7 +37,7 @@ photo_n = load_counter()
 # HTML
 # =====================
 
-def handle_request(request, conn):
+def handle_request(server, request, conn):
     global photo_n
 
     if "GET /frame" in request:
@@ -64,7 +64,7 @@ def handle_request(request, conn):
         with open(filename, "wb") as f:
             f.write(img)
 
-        conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
+        conn.send("HTTP/1.1 200 OK\r\n\r\n")
 
     elif "GET /serieshot" in request:
         label = "default"
@@ -84,10 +84,13 @@ def handle_request(request, conn):
         with open(filename, "wb") as f:
             f.write(img)
 
-        conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
+        conn.send("HTTP/1.1 200 OK\r\n\r\n")
 
     else:
-        conn.send("HTTP/1.1 200 OK\r\n\r\nOK")
+        conn.send(server.html())
+        
+    conn.close()
+    return False
 
 style = """
 body { background:#111; color:white; text-align:center; font-family:Arial; }
@@ -141,7 +144,8 @@ function update() {
     let fps = (frames / ((now - startTime)/1000)).toFixed(1);
     document.getElementById("fps").innerHTML = fps + " FPS";
 
-    setTimeout(update, 200);
+    if (runningSerie) setTimeout(update, dtSerie);
+    else setTimeout(update, 500);
 }
 
 function takePhoto() {
@@ -157,7 +161,7 @@ function startSerie() {
     dtSerie = parseInt(document.getElementById("dt").value);
 
     if (isNaN(Ns) || Ns <= 0) Ns = 10;
-    if (isNaN(dtSerie) || dtSerie < 200) dtSerie = 2000;
+    if (isNaN(dtSerie) || dtSerie < 200) dtSerie = 1000;
 
     serieIndex = 0;
     document.getElementById("serieNum").innerHTML = "0 / " + Ns;
@@ -226,7 +230,7 @@ body = """
 <input type="number" id="Ns" value="10">
 
 <label>dt (ms) :</label>
-<input type="number" id="dt" value="2000">
+<input type="number" id="dt" value="1000">
 
 <br><br>
 

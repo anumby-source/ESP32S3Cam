@@ -128,12 +128,17 @@ class Server:
                     if my_handle_request(self, request, conn):
                         conn.send('HTTP/1.1 200 OK\nContent-Type: text/html\n\n')
                         conn.close()
-                        continue
                         
 
                 if "GET /exit" in request:
-                    conn.send("HTTP/1.1 200 OK\r\n\r\nBYE")
                     self.running = False
+
+                    # print("server> exit")
+
+                    # conn.send("HTTP/1.1 200 OK\r\n\r\nBYE")
+                    # conn.close()
+                    self.stop_server()
+                    break
 
                 # elif "GET /test" in request:
                 #     conn.send("HTTP/1.1 200 OK\r\n\r\nTEST")
@@ -154,7 +159,8 @@ class Server:
                 try:
                     conn.close()
                 except:
-                    pass
+                    break
 
+        print("BYE")
 
 #============================
