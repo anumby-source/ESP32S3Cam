@@ -42,6 +42,3 @@ Ainsi
 - les détections reflètent les détections du K210
 
 Seule la commande "Réinitialiser" restera accessible par l'opérateur
-
-
-
