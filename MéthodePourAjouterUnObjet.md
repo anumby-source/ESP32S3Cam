@@ -32,8 +32,14 @@ Pour cela on exécute le programme `Python\detourage.py`
 
 ![img_4.png](img_4.png)
 
-Pour chaque image, on va ajuster la `BoundingBox` englobante entourant l'objet (clavier "s" pour sauvegarder les fichiers de description) sous le nome
-`dataset/xml/photo_<label>_<numéro>.xml`
+Pour chaque image, on peut choisir:
+- choisir la "Bounding Box" (BB) automatiquement construite, si elle est satisfaisante en cliquant sur cette BB.
+- changer la BB en touchant la touche "v" du clavier, puis grâce à la souris, tracer une BB
+- avec les touches "b" ou "n" du clavier on naviguer dans la liste des photos disponibles
+
+Dans tous les cas de sélection, on va créer ou mettre à jour le fichier 
+d'annotation XML `dataset/xml/photo_<label>_<numéro>.xml` qui contient la BB
+mise à jour au format Pascal VOC.
 
 On a ainsi augmenté le dataset de l'ensemble des photos pour ce nouvel objet.
 
