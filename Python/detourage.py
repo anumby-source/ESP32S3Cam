@@ -17,8 +17,8 @@ choix_valides = {}  # {chemin_image: {"label": str, "bb": tuple}}
 dossier_annotations = "annotations"
 
 # Chemins
-image_dir = "dataset/images"
-output_dir = "dataset/xml"
+image_dir = "../dataset/images"
+output_dir = "../dataset/xml"
 os.makedirs(output_dir, exist_ok=True)
 
 # Créer le dossier pour les annotations XML
