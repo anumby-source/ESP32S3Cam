@@ -27,7 +27,7 @@ os.makedirs(dossier_annotations, exist_ok=True)
 def detecter_contours(image_path):
     global contours_trouves, image_globale, index_selectionne, bb_manuelle
     image = cv2.imread(image_path)
-    print("detecter_contours> image_path")
+    # print("detecter_contours> image_path")
     if image is None:
         print(f"Erreur : impossible de charger {image_path}")
         return None
@@ -153,7 +153,7 @@ def gestion_souris(event, x, y, flags, param):
             bb_manuelle = (*point_depart, x, y)
             afficher_image_avec_selection()
             point_depart = None
-            print("gestion_souris", index_selectionne, mode_dessin, point_depart, bb_manuelle)
+            # print("gestion_souris", index_selectionne, mode_dessin, point_depart, bb_manuelle)
             mode_dessin = False
             valider_et_passer_a_suivante()
     else:
@@ -173,7 +173,10 @@ def afficher_image_avec_selection():
     image_temp = image_globale.copy()
     chemin_image = liste_images[index_image_courante]
 
-    print("afficher_image_avec_selection")
+    img_path, img_name = os.path.split(chemin_image)
+    cv2.putText(image_temp, img_name, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+    # print("afficher_image_avec_selection")
 
     # Si l'image a un choix validé, l'afficher en rouge
     if chemin_image in choix_valides:
@@ -182,7 +185,7 @@ def afficher_image_avec_selection():
         if choix["label"] == "manual":
             x1, y1, x2, y2 = bb
             cv2.rectangle(image_temp, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Rouge pour BB validée
-            cv2.putText(image_temp, "Manuel", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            # cv2.putText(image_temp, "Manuel", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         else:
             for i, contour in enumerate(contours_trouves):
                 x, y, w, h = cv2.boundingRect(contour)
@@ -190,6 +193,7 @@ def afficher_image_avec_selection():
                     cv2.rectangle(image_temp, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Rouge
                     peri = cv2.arcLength(contour, True)
                     approx = cv2.approxPolyDP(contour, 0.03 * peri, True)
+                    """
                     if len(approx) == 8:
                         cv2.putText(image_temp, "STOP", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                     elif len(approx) == 3:
@@ -198,6 +202,7 @@ def afficher_image_avec_selection():
                         cv2.putText(image_temp, "Carre", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                     else:
                         cv2.putText(image_temp, "Cercle", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                    """
                     break
     else:
         # Afficher les BB non validées en bleu
@@ -208,6 +213,7 @@ def afficher_image_avec_selection():
 
             peri = cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, 0.03 * peri, True)
+            """
             if len(approx) == 8:
                 cv2.putText(image_temp, "STOP", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
             elif len(approx) == 3:
@@ -220,19 +226,20 @@ def afficher_image_avec_selection():
                     cv2.putText(image_temp, "Rectangle", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
             else:
                 cv2.putText(image_temp, "Cercle", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            """
 
     # Afficher la BB manuelle (si elle existe)
     if bb_manuelle:
         x1, y1, x2, y2 = bb_manuelle
         cv2.rectangle(image_temp, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(image_temp, "Manuel", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        # cv2.putText(image_temp, "Manuel", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
     cv2.imshow("BB - Flèches: naviguer, Espace: valider, d: dessiner", image_temp)
 
 def obtenir_label_et_bb():
     global index_selectionne, bb_manuelle, contours_trouves
 
-    print("obtenir_label_et_bb>")
+    # print("obtenir_label_et_bb>")
 
     if index_selectionne != -1:
         contour = contours_trouves[index_selectionne]
@@ -256,7 +263,7 @@ def valider_et_passer_a_suivante():
 
 
     chemin_image = liste_images[index_image_courante]
-    print("valider_et_passer_a_suivante>", chemin_image)
+    # print("valider_et_passer_a_suivante>", chemin_image)
     label, bb = obtenir_label_et_bb()
     if label and bb:
         choix_valides[chemin_image] = {"label": label, "bb": bb}
@@ -277,7 +284,7 @@ def valider_et_passer_a_suivante():
 def traiter_image(image_path):
     global image_globale, contours_trouves, index_selectionne, bb_manuelle, choix_valides
 
-    print("traiter_image> Image courante:", image_path)
+    # print("traiter_image> Image courante:", image_path)
 
     if image_path in choix_valides:
         # Charger les choix validés
@@ -316,7 +323,7 @@ def naviguer_entre_images():
             valider_et_passer_a_suivante()
         elif key == ord('v'):  # Activer/désactiver le mode dessin
             mode_dessin = not mode_dessin
-            print("Mode dessin activé" if mode_dessin else "Mode dessin désactivé")
+            # print("Mode dessin activé" if mode_dessin else "Mode dessin désactivé")
         elif key == 27:  # Échap : quitter
             break
     cv2.destroyAllWindows()
