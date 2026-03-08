@@ -28,7 +28,7 @@ On doit aussi s'assurer que le set d'images on été déposées dans un dossier 
 
 ## Ensuite nous allons créer les descriptifs associés à chaque image. 
 
-Pour cela on exécute le programme `Python\SetDatasetXML.py`
+Pour cela on exécute le programme `Python\detourage.py`
 
 ![img_4.png](img_4.png)
 
