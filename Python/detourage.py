@@ -135,49 +135,6 @@ def create_pascal_voc_xml(img_name, img_width, img_height, img_depth, class_name
         f.write(xml_pretty)
     print(f"Fichier XML sauvegardé : {xml_file}")
 
-"""
-def generer_xml_pascal_voc(image_path, bb, label):
-    img = cv2.imread(image_path)
-    height, width, _ = img.shape
-
-    root = ET.Element("annotation")
-    ET.SubElement(root, "folder").text = "dataset/images"
-    ET.SubElement(root, "filename").text = os.path.basename(image_path)
-
-    source = ET.SubElement(root, "source")
-    ET.SubElement(source, "database").text = "Unknown"
-
-    size = ET.SubElement(root, "size")
-    ET.SubElement(size, "width").text = str(width)
-    ET.SubElement(size, "height").text = str(height)
-    ET.SubElement(size, "depth").text = "3"
-
-    ET.SubElement(root, "segmented").text = "0"
-
-    obj = ET.SubElement(root, "object")
-    ET.SubElement(obj, "name").text = label
-    ET.SubElement(obj, "pose").text = "Unspecified"
-    ET.SubElement(obj, "truncated").text = "0"
-    ET.SubElement(obj, "difficult").text = "0"
-
-    bndbox = ET.SubElement(obj, "bndbox")
-    ET.SubElement(bndbox, "xmin").text = str(bb[0])
-    ET.SubElement(bndbox, "ymin").text = str(bb[1])
-    ET.SubElement(bndbox, "xmax").text = str(bb[2])
-    ET.SubElement(bndbox, "ymax").text = str(bb[3])
-
-    xml_str = ET.tostring(root, 'utf-8')
-    return minidom.parseString(xml_str).toprettyxml(indent="  ")
-
-def sauvegarder_annotation(image_path, bb, label):
-    xml_content = create_pascal_voc_xml(img_name, img_width, img_height, img_depth, class_name, bbox)
-    xml_content = generer_xml_pascal_voc(image_path, bb, label)
-    xml_filename = os.path.join(dossier_annotations, os.path.splitext(os.path.basename(image_path))[0] + ".xml")
-    with open(xml_filename, "w") as f:
-        f.write(xml_content)
-    print(f"Annotation sauvegardée : {xml_filename}")
-"""
-
 def gestion_souris(event, x, y, flags, param):
     global index_selectionne, mode_dessin, point_depart, bb_manuelle, image_globale
 
