@@ -37,7 +37,7 @@ Pour chaque image, on peut choisir:
 - changer la BB en touchant la touche "v" du clavier, puis grâce à la souris, tracer une nouvelle BB
 - avec les touches "b" ou "n" du clavier on peut naviguer dans la liste des photos disponibles
 
-Dans tous les cas de sélection, on va créer ou mettre à jour le fichier 
+Dans tous les cas de sélection, dès que l'on a construit ou sélectionné une BB, on va créer ou mettre à jour le fichier 
 d'annotation XML `dataset/xml/photo_<label>_<numéro>.xml` qui contient la BB
 mise à jour au format Pascal VOC.
 
