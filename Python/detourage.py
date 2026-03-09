@@ -145,7 +145,10 @@ def lire_xml_et_ajouter_choix(image_path):
 
     xml_path = os.path.join(output_dir, os.path.basename(image_path).replace(".jpg", ".xml").replace(".png", ".xml"))
     if not os.path.exists(xml_path):
+        print("NOT xml path ", xml_path)
         return False
+
+    print("xml path", xml_path)
 
     tree = ET.parse(xml_path)
     root = tree.getroot()
@@ -215,7 +218,7 @@ def afficher_image_avec_selection():
         if choix["label"] == "manual":
             # print("afficher_image_avec_selection 1")
             x1, y1, x2, y2 = bb
-            cv2.rectangle(image_temp, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Rouge pour BB validée
+            cv2.rectangle(image_temp, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Rouge pour BB validée
             # cv2.putText(image_temp, "Manuel", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         else:
             # print("afficher_image_avec_selection 2")
