@@ -135,6 +135,36 @@ def create_pascal_voc_xml(img_name, img_width, img_height, img_depth, class_name
         f.write(xml_pretty)
     print(f"Fichier XML sauvegardé : {xml_file}")
 
+def lire_xml_et_ajouter_choix(image_path):
+    """Lit le fichier XML et ajoute les BB à `choix_valides`."""
+    global contours_trouves, image_globale, index_selectionne, bb_manuelle
+
+    if image_globale is None:
+        image = cv2.imread(image_path)
+        image_globale = image.copy()
+
+    xml_path = os.path.join(output_dir, os.path.basename(image_path).replace(".jpg", ".xml").replace(".png", ".xml"))
+    if not os.path.exists(xml_path):
+        return False
+
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    for obj in root.findall("object"):
+        bndbox = obj.find("bndbox")
+        xmin = int(bndbox.find("xmin").text)
+        ymin = int(bndbox.find("ymin").text)
+        xmax = int(bndbox.find("xmax").text)
+        ymax = int(bndbox.find("ymax").text)
+        label = "manual"
+        bb_manuelle = xmin, ymin, xmax, ymax
+
+        choix_valides[image_path] = {"label": label, "bb": bb_manuelle}
+        print("lire_xml_et_ajouter_choix> ", image_path, label, bb_manuelle)
+        afficher_image_avec_selection()
+        return True
+    return False
+
 def gestion_souris(event, x, y, flags, param):
     global index_selectionne, mode_dessin, point_depart, bb_manuelle, image_globale
 
@@ -176,17 +206,19 @@ def afficher_image_avec_selection():
     img_path, img_name = os.path.split(chemin_image)
     cv2.putText(image_temp, img_name, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-    # print("afficher_image_avec_selection")
+    # print("afficher_image_avec_selection", bb_manuelle, choix_valides[chemin_image])
 
     # Si l'image a un choix validé, l'afficher en rouge
     if chemin_image in choix_valides:
         choix = choix_valides[chemin_image]
         bb = choix["bb"]
         if choix["label"] == "manual":
+            # print("afficher_image_avec_selection 1")
             x1, y1, x2, y2 = bb
             cv2.rectangle(image_temp, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Rouge pour BB validée
             # cv2.putText(image_temp, "Manuel", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         else:
+            # print("afficher_image_avec_selection 2")
             for i, contour in enumerate(contours_trouves):
                 x, y, w, h = cv2.boundingRect(contour)
                 if (x, y, x + w, y + h) == bb:
@@ -206,6 +238,7 @@ def afficher_image_avec_selection():
                     break
     else:
         # Afficher les BB non validées en bleu
+        # print("afficher_image_avec_selection 3")
         for i, contour in enumerate(contours_trouves):
             x, y, w, h = cv2.boundingRect(contour)
             color = (0, 0, 255) if i == index_selectionne else (255, 0, 0)
@@ -230,6 +263,7 @@ def afficher_image_avec_selection():
 
     # Afficher la BB manuelle (si elle existe)
     if bb_manuelle:
+        # print("afficher_image_avec_selection 4", bb_manuelle)
         x1, y1, x2, y2 = bb_manuelle
         cv2.rectangle(image_temp, (x1, y1), (x2, y2), (0, 255, 0), 2)
         # cv2.putText(image_temp, "Manuel", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
@@ -285,6 +319,11 @@ def traiter_image(image_path):
     global image_globale, contours_trouves, index_selectionne, bb_manuelle, choix_valides
 
     # print("traiter_image> Image courante:", image_path)
+
+    # Vérifier si un fichier XML existe déjà pour cette image
+    if image_path not in choix_valides:
+        lire_xml_et_ajouter_choix(image_path)
+        afficher_image_avec_selection()
 
     if image_path in choix_valides:
         # Charger les choix validés
